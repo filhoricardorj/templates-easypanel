@@ -2,6 +2,7 @@
   "services": [
     {
       "type": "postgres",
+      "env": ["POSTGRES_DB=n8n"],
       "data": {
         "projectName": "$(PROJECT_NAME)",
         "serviceName": "db",
