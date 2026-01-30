@@ -2,9 +2,11 @@
   "services": [
     {
       "type": "postgres",
-      "env": ["POSTGRES_DB=n8n"],
+      "env": [
+        "POSTGRES_DB=n8n"
+      ],
       "data": {
-        "projectName": "n8n",
+        "projectName": "$(PROJECT_NAME)",
         "serviceName": "db",
         "image": "pgvector/pgvector:pg17-trixie",
         "password": "__ALTERAR__"
@@ -13,7 +15,7 @@
     {
       "type": "redis",
       "data": {
-        "projectName": "n8n",
+        "projectName": "$(PROJECT_NAME)",
         "serviceName": "redis",
         "image": "redis:7",
         "password": "__ALTERAR__"
@@ -22,7 +24,7 @@
     {
       "type": "app",
       "data": {
-        "projectName": "n8n",
+        "projectName": "$(PROJECT_NAME)",
         "serviceName": "editor",
         "source": {
           "type": "image",
@@ -36,7 +38,7 @@
         },
         "domains": [
           {
-            "host": "__ALTERAR__",
+            "host": "$(EASYPANEL_DOMAIN)",
             "https": true,
             "port": 5678,
             "path": "/",
@@ -58,7 +60,7 @@
     {
       "type": "app",
       "data": {
-        "projectName": "n8n",
+        "projectName": "$(PROJECT_NAME)",
         "serviceName": "webhooks",
         "source": {
           "type": "image",
@@ -72,7 +74,7 @@
         },
         "domains": [
           {
-            "host": "__ALTERAR__",
+            "host": "$(EASYPANEL_DOMAIN)",
             "https": true,
             "port": 5678,
             "path": "/webhook/",
@@ -82,7 +84,7 @@
             "internalProtocol": "http"
           },
           {
-            "host": "__ALTERAR__",
+            "host": "$(EASYPANEL_DOMAIN)",
             "https": true,
             "port": 5678,
             "path": "/webhook-waiting/",
@@ -104,8 +106,8 @@
     {
       "type": "app",
       "data": {
-        "projectName": "n8n",
-        "serviceName": "worker-1",
+        "projectName": "$(PROJECT_NAME)",
+        "serviceName": "worker",
         "source": {
           "type": "image",
           "image": "n8nio/n8n:stable"
