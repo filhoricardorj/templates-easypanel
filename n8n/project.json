@@ -1,0 +1,127 @@
+{
+  "services": [
+    {
+      "type": "postgres",
+      "data": {
+        "projectName": "n8n",
+        "serviceName": "db",
+        "image": "pgvector/pgvector:pg17-trixie",
+        "password": "SENHA_AQUI"
+      }
+    },
+    {
+      "type": "redis",
+      "data": {
+        "projectName": "n8n",
+        "serviceName": "redis",
+        "image": "redis:7",
+        "password": "SENHA_AQUI"
+      }
+    },
+    {
+      "type": "app",
+      "data": {
+        "projectName": "n8n",
+        "serviceName": "editor",
+        "source": {
+          "type": "image",
+          "image": "n8nio/n8n:stable"
+        },
+        "env": "N8N_PORT=5678",
+        "deploy": {
+          "replicas": 1,
+          "command": null,
+          "zeroDowntime": true
+        },
+        "domains": [
+          {
+            "host": "n8n.filhoricardorj.com.br",
+            "https": true,
+            "port": 5678,
+            "path": "/",
+            "middlewares": [],
+            "certificateResolver": "",
+            "wildcard": false,
+            "internalProtocol": "http"
+          }
+        ],
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "editor-data",
+            "mountPath": "/home/node/.n8n"
+          }
+        ]
+      }
+    },
+    {
+      "type": "app",
+      "data": {
+        "projectName": "n8n",
+        "serviceName": "webhooks",
+        "source": {
+          "type": "image",
+          "image": "n8nio/n8n:stable"
+        },
+        "env": "N8N_PORT=5677",
+        "deploy": {
+          "replicas": 1,
+          "command": "n8n webhook",
+          "zeroDowntime": true
+        },
+        "domains": [
+          {
+            "host": "n8n.filhoricardorj.com.br",
+            "https": true,
+            "port": 5677,
+            "path": "/webhook/",
+            "middlewares": [],
+            "certificateResolver": "",
+            "wildcard": false,
+            "internalProtocol": "http"
+          },
+          {
+            "host": "n8n.filhoricardorj.com.br",
+            "https": true,
+            "port": 5677,
+            "path": "/webhook-waiting/",
+            "middlewares": [],
+            "certificateResolver": "",
+            "wildcard": false,
+            "internalProtocol": "http"
+          }
+        ],
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "webhooks-data",
+            "mountPath": "/home/node/.n8n"
+          }
+        ]
+      }
+    },
+    {
+      "type": "app",
+      "data": {
+        "projectName": "n8n",
+        "serviceName": "worker",
+        "source": {
+          "type": "image",
+          "image": "n8nio/n8n:stable"
+        },
+        "deploy": {
+          "replicas": 1,
+          "command": "n8n worker",
+          "zeroDowntime": true
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "worker-data",
+            "mountPath": "/home/node/.n8n"
+          }
+        ]
+      }
+    }
+  ]
+}

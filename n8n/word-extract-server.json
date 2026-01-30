@@ -1,0 +1,23 @@
+{
+    "services": [
+        {
+            "type": "app",
+            "data": {
+                "projectName": "n8n",
+                "serviceName": "word-extract-server",
+                "source": {
+                    "type": "dockerfile",
+                    "dockerfile": "# Base: Python 3.11 slim\r\nFROM python:3.11-slim\r\n\r\n# Instalar dependências do sistema\r\nRUN apt-get update && \\\r\n    apt-get install -y --no-install-recommends \\\r\n        antiword \\\r\n        unrtf \\\r\n        catdoc \\\r\n        libreoffice-core \\\r\n        libreoffice-writer \\\r\n        python3-dev \\\r\n        build-essential \\\r\n        wget \\\r\n        curl \\\r\n        git && \\\r\n    rm -rf /var/lib/apt/lists/*\r\n\r\n# Diretório da aplicação\r\nWORKDIR /app\r\n\r\n# Atualizar pip e instalar pacotes Python\r\nRUN python -m pip install --upgrade pip setuptools wheel && \\\r\n    pip install --no-cache-dir fastapi uvicorn[standard] requests python-docx\r\n\r\n# Criar main.py\r\nRUN echo 'from fastapi import FastAPI, HTTPException\\n\\\r\nfrom pydantic import BaseModel\\n\\\r\nimport requests\\n\\\r\nimport os\\n\\\r\nimport urllib.parse\\n\\\r\nfrom docx import Document\\n\\\r\nimport subprocess\\n\\\r\n\\n\\\r\napp = FastAPI(title=\"Word Text Extraction API\")\\n\\\r\n\\n\\\r\nclass FileUrl(BaseModel):\\n\\\r\n    url: str\\n\\\r\n\\n\\\r\n@app.post(\"/extract\")\\n\\\r\ndef extract_text(payload: FileUrl):\\n\\\r\n    try:\\n\\\r\n        response = requests.get(payload.url)\\n\\\r\n        response.raise_for_status()\\n\\\r\n    except Exception as e:\\n\\\r\n        raise HTTPException(status_code=400, detail=f\"Erro ao baixar arquivo: {e}\")\\n\\\r\n\\n\\\r\n    filename = os.path.basename(urllib.parse.urlparse(payload.url).path)\\n\\\r\n    if not filename:\\n\\\r\n        filename = \"temp_file\"\\n\\\r\n    temp_path = os.path.join(\"/app\", filename)\\n\\\r\n\\n\\\r\n    with open(temp_path, \"wb\") as f:\\n\\\r\n        f.write(response.content)\\n\\\r\n\\n\\\r\n    try:\\n\\\r\n        ext = os.path.splitext(temp_path)[1].lower()\\n\\\r\n        if ext == \".docx\":\\n\\\r\n            doc = Document(temp_path)\\n\\\r\n            text = \"\\\\n\".join([p.text for p in doc.paragraphs])\\n\\\r\n        elif ext == \".doc\":\\n\\\r\n            result = subprocess.run([\"antiword\", temp_path], capture_output=True, text=True)\\n\\\r\n            text = result.stdout\\n\\\r\n        else:\\n\\\r\n            raise HTTPException(status_code=400, detail=\"Formato não suportado. Apenas doc/docx\")\\n\\\r\n    except Exception as e:\\n\\\r\n        raise HTTPException(status_code=500, detail=f\"Erro ao extrair texto: {e}\")\\n\\\r\n\\n\\\r\n    return {\\n\\\r\n        \"mode\": \"word\",\\n\\\r\n        \"text_length\": len(text),\\n\\\r\n        \"text\": text\\n\\\r\n    }' > main.py\r\n\r\n# Expor porta\r\nEXPOSE 8000\r\n\r\n# Entrypoint\r\nENTRYPOINT [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\r\n"
+                },
+                "build": {
+                    "type": "dockerfile"
+                },
+                "deploy": {
+                    "replicas": 1,
+                    "command": null,
+                    "zeroDowntime": true
+                }
+            }
+        }
+    ]
+}
