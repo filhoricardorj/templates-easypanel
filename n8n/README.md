@@ -12,6 +12,7 @@ Templates relacionados ao ecossistema N8N.
   - N8N Editor
   - N8N Webhooks
   - N8N Worker
+  - N8N Worker Runner
 - **Descrição**: Setup completo e escalável do N8N com serviços separados para editor, webhooks e workers.
 
 ### Word Extract Server (`word-extract-server.json`)
