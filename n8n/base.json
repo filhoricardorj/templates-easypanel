@@ -2,9 +2,7 @@
   "services": [
     {
       "type": "postgres",
-      "env": [
-        "POSTGRES_DB=n8n"
-      ],
+      "env": "POSTGRES_DB=n8n",
       "data": {
         "projectName": "$(PROJECT_NAME)",
         "serviceName": "db",
@@ -30,7 +28,6 @@
           "type": "image",
           "image": "n8nio/n8n:stable"
         },
-        "env": "N8N_RUNNERS_ENABLED=false",
         "deploy": {
           "replicas": 1,
           "command": null,
@@ -66,7 +63,6 @@
           "type": "image",
           "image": "n8nio/n8n:stable"
         },
-        "env": "N8N_RUNNERS_ENABLED=false",
         "deploy": {
           "replicas": 1,
           "command": "n8n webhook",
@@ -107,7 +103,7 @@
       "type": "app",
       "data": {
         "projectName": "$(PROJECT_NAME)",
-        "serviceName": "worker",
+        "serviceName": "worker-1",
         "source": {
           "type": "image",
           "image": "n8nio/n8n:stable"
@@ -130,7 +126,7 @@
     {
       "type": "app",
       "data": {
-        "projectName": "n8n",
+        "projectName": "$(PROJECT_NAME)",
         "serviceName": "worker-1-runner",
         "source": {
           "type": "image",
