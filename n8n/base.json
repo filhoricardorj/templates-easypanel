@@ -2,33 +2,32 @@
   "services": [
     {
       "type": "postgres",
-      "env": ["POSTGRES_DB=n8n"],
       "data": {
-        "projectName": "$(PROJECT_NAME)",
+        "projectName": "n8n",
         "serviceName": "db",
         "image": "pgvector/pgvector:pg17-trixie",
-        "password": "SENHA_AQUI"
+        "password": "__ALTERAR__"
       }
     },
     {
       "type": "redis",
       "data": {
-        "projectName": "$(PROJECT_NAME)",
+        "projectName": "n8n",
         "serviceName": "redis",
         "image": "redis:7",
-        "password": "SENHA_AQUI"
+        "password": "__ALTERAR__"
       }
     },
     {
       "type": "app",
       "data": {
-        "projectName": "$(PROJECT_NAME)",
+        "projectName": "n8n",
         "serviceName": "editor",
         "source": {
           "type": "image",
           "image": "n8nio/n8n:stable"
         },
-        "env": "N8N_PORT=5678",
+        "env": "N8N_RUNNERS_ENABLED=false",
         "deploy": {
           "replicas": 1,
           "command": null,
@@ -36,7 +35,7 @@
         },
         "domains": [
           {
-            "host": "$(EASYPANEL_DOMAIN)",
+            "host": "__ALTERAR__",
             "https": true,
             "port": 5678,
             "path": "/",
@@ -58,13 +57,13 @@
     {
       "type": "app",
       "data": {
-        "projectName": "$(PROJECT_NAME)",
+        "projectName": "n8n",
         "serviceName": "webhooks",
         "source": {
           "type": "image",
           "image": "n8nio/n8n:stable"
         },
-        "env": "N8N_PORT=5677",
+        "env": "N8N_RUNNERS_ENABLED=false",
         "deploy": {
           "replicas": 1,
           "command": "n8n webhook",
@@ -72,9 +71,9 @@
         },
         "domains": [
           {
-            "host": "$(EASYPANEL_DOMAIN)",
+            "host": "__ALTERAR__",
             "https": true,
-            "port": 5677,
+            "port": 5678,
             "path": "/webhook/",
             "middlewares": [],
             "certificateResolver": "",
@@ -82,9 +81,9 @@
             "internalProtocol": "http"
           },
           {
-            "host": "$(EASYPANEL_DOMAIN)",
+            "host": "__ALTERAR__",
             "https": true,
-            "port": 5677,
+            "port": 5678,
             "path": "/webhook-waiting/",
             "middlewares": [],
             "certificateResolver": "",
@@ -104,12 +103,13 @@
     {
       "type": "app",
       "data": {
-        "projectName": "$(PROJECT_NAME)",
-        "serviceName": "worker",
+        "projectName": "n8n",
+        "serviceName": "worker-1",
         "source": {
           "type": "image",
           "image": "n8nio/n8n:stable"
         },
+        "env": "N8N_RUNNERS_AUTH_TOKEN=__ALTERAR__",
         "deploy": {
           "replicas": 1,
           "command": "n8n worker",
@@ -118,10 +118,27 @@
         "mounts": [
           {
             "type": "volume",
-            "name": "worker-data",
+            "name": "worker-1-data",
             "mountPath": "/home/node/.n8n"
           }
         ]
+      }
+    },
+    {
+      "type": "app",
+      "data": {
+        "projectName": "n8n",
+        "serviceName": "worker-1-runner",
+        "source": {
+          "type": "image",
+          "image": "n8nio/runners:stable"
+        },
+        "env": "N8N_RUNNERS_AUTH_TOKEN=__ALTERAR__\nN8N_RUNNERS_TASK_BROKER_URI=http://worker-1:5679",
+        "deploy": {
+          "replicas": 1,
+          "command": null,
+          "zeroDowntime": true
+        }
       }
     }
   ]
