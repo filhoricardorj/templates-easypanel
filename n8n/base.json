@@ -2,9 +2,9 @@
   "services": [
     {
       "type": "postgres",
-      "env": "POSTGRES_DB=n8n",
       "data": {
         "projectName": "$(PROJECT_NAME)",
+        "databaseName": "n8n",
         "serviceName": "db",
         "image": "pgvector/pgvector:pg17-trixie",
         "password": "__ALTERAR__"
