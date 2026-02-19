@@ -1,4 +1,5 @@
 {
+  "name":"N8N Distribuido",
   "services": [
     {
       "type": "postgres",

@@ -1,0 +1,47 @@
+{
+"services":[
+    {
+      "type": "app",
+      "data": {
+        "projectName": "$(PROJECT_NAME)",
+        "serviceName": "tesseract-server",
+        "source": {
+          "type": "dockerfile",
+          "dockerfile": "FROM python:3.11-slim\r\n\r\nRUN apt-get update && \\\r\n    apt-get install -y --no-install-recommends \\\r\n        tesseract-ocr \\\r\n        tesseract-ocr-por \\\r\n        libgl1 \\\r\n        libglib2.0-0 \\\r\n        poppler-utils \\\r\n        build-essential \\\r\n        pkg-config \\\r\n        python3-dev \\\r\n        wget \\\r\n    && rm -rf /var/lib/apt/lists/*\r\n\r\nWORKDIR /app\r\n\r\nRUN pip install --no-cache-dir \\\r\n    fastapi \\\r\n    uvicorn[standard] \\\r\n    pymupdf \\\r\n    pillow \\\r\n    pytesseract \\\r\n    requests\r\n\r\n\r\nEXPOSE 8000\r\n\r\nCMD [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\r\n"
+        },
+        "build": {
+          "type": "dockerfile"
+        },
+        "deploy": {
+          "replicas": 1,
+          "command": null,
+          "zeroDowntime": true
+        },
+        "domains": [
+          {
+            "host": "$(EASYPANEL_DOMAIN)",
+            "https": true,
+            "port": 8000,
+            "path": "/",
+            "middlewares": [],
+            "certificateResolver": "",
+            "wildcard": false,
+            "internalProtocol": "http"
+          }
+        ],
+        "mounts": [
+          {
+            "type": "file",
+            "content": "from fastapi import FastAPI, HTTPException, Request\r\nfrom pydantic import BaseModel\r\nimport requests\r\nfrom io import BytesIO\r\nimport fitz  # pymupdf\r\nfrom PIL import Image\r\nimport pytesseract\r\nimport logging\r\nimport sys\r\nimport time\r\nimport asyncio\r\nfrom concurrent.futures import ThreadPoolExecutor\r\n\r\n# 🔹 Logging forçado para stdout (Docker-friendly)\r\nlogging.basicConfig(\r\n    level=logging.INFO,\r\n    format=\"%(asctime)s | %(levelname)s | %(message)s\",\r\n    datefmt=\"%Y-%m-%d %H:%M:%S\",\r\n    handlers=[logging.StreamHandler(sys.stdout)],\r\n    force=True\r\n)\r\n\r\napp = FastAPI(title=\"PDF OCR Server\")\r\n\r\n# 🔹 Pool de threads para OCR (CPU-bound)\r\nexecutor = ThreadPoolExecutor(max_workers=2)\r\n\r\n\r\nclass PDFUrl(BaseModel):\r\n    url: str\r\n\r\n\r\n@app.middleware(\"http\")\r\nasync def log_requests(request: Request, call_next):\r\n    start = time.time()\r\n\r\n    logging.info(\r\n        f\"Request | {request.method} {request.url.path} \"\r\n        f\"IP={request.client.host if request.client else 'unknown'}\"\r\n    )\r\n\r\n    response = await call_next(request)\r\n\r\n    logging.info(\r\n        f\"Response | Status={response.status_code} \"\r\n        f\"Time={time.time() - start:.2f}s\"\r\n    )\r\n\r\n    return response\r\n\r\n\r\n@app.get(\"/\")\r\nasync def health():\r\n    return {\"status\": \"ok\"}\r\n\r\n\r\ndef process_ocr(pdf_bytes: bytes):\r\n    logging.info(\"OCR iniciado (thread separada)\")\r\n\r\n    doc = fitz.open(stream=BytesIO(pdf_bytes), filetype=\"pdf\")\r\n    pages = []\r\n\r\n    total_pages = doc.page_count\r\n\r\n    for i, page in enumerate(doc, start=1):\r\n        logging.info(f\"OCR página {i}/{total_pages}\")\r\n\r\n        pix = page.get_pixmap(dpi=200)\r\n        img = Image.frombytes(\"RGB\", (pix.width, pix.height), pix.samples)\r\n\r\n        text = pytesseract.image_to_string(\r\n            img,\r\n            lang=\"por\",\r\n            config=\"--psm 6\"\r\n        )\r\n\r\n        pages.append({\r\n            \"page\": i,\r\n            \"text\": text.strip(),\r\n            \"text_length\": len(text.strip())\r\n        })\r\n\r\n    doc.close()\r\n\r\n    logging.info(\"OCR finalizado\")\r\n    return pages\r\n\r\n\r\n@app.post(\"/ocr\")\r\nasync def ocr_pdf(payload: PDFUrl):\r\n    logging.info(\"Requisição OCR recebida\")\r\n\r\n    try:\r\n        response = requests.get(payload.url, timeout=60)\r\n        response.raise_for_status()\r\n    except Exception as e:\r\n        logging.error(f\"Erro ao baixar PDF: {e}\")\r\n        raise HTTPException(status_code=400, detail=str(e))\r\n\r\n    loop = asyncio.get_running_loop()\r\n\r\n    pages = await loop.run_in_executor(\r\n        executor,\r\n        process_ocr,\r\n        response.content\r\n    )\r\n\r\n    return {\r\n        \"mode\": \"ocr\",\r\n        \"total_pages\": len(pages),\r\n        \"pages\": pages\r\n    }\r\n",
+            "mountPath": "/app/main.py"
+          }
+        ],
+        "resources": {
+          "memoryReservation": 2000,
+          "memoryLimit": 2500,
+          "cpuReservation": 0,
+          "cpuLimit": 0
+        }
+      }
+    }
+}
